@@ -5,8 +5,8 @@
 
 % Step 1. Load and downsample the images
 
-im1=imread('Mars-1.jpg');
-im2=imread('Mars-2.jpg');
+im1=imread('im1.jpg');
+im2=imread('im2.jpg');
 
 im1=imresize(imfilter(im1,fspecial('gaussian',7,1.),'same','replicate'),0.5,'bicubic');
 im2=imresize(imfilter(im2,fspecial('gaussian',7,1.),'same','replicate'),0.5,'bicubic');
