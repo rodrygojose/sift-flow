@@ -1,10 +1,6 @@
-%%
-addpath(fullfile(pwd,'mexDenseSIFT'));
-addpath(fullfile(pwd,'mexDiscreteFlow'));
+function run_siftFlow( im1, im2 )
 
-%%
-im1=imread('im1.jpg');
-im2=imread('im2.jpg');
+%% data parameters
 
 im1=imresize(imfilter(im1,fspecial('gaussian',7,1.),'same','replicate'),0.5,'bicubic');
 im2=imresize(imfilter(im2,fspecial('gaussian',7,1.),'same','replicate'),0.5,'bicubic');
@@ -27,19 +23,29 @@ SIFTflowpara.topwsize=10;
 SIFTflowpara.nTopIterations = 60;
 SIFTflowpara.nIterations= 30;
 
-tic;[vx,vy,energylist]=SIFTflowc2f(sift1,sift2,SIFTflowpara);toc
+%% sift flow
 
-warpI2=warpImage(im2,vx,vy);
-figure;imshow(im1);figure;imshow(warpI2);
+tic;
+[vx,vy,energylist] = SIFTflowc2f(sift1,sift2,SIFTflowpara);
+toc
 
-% display flow
+%% warp
+
+warpI2 = warpImage(im2,vx,vy);
+figure;
+imshow(im1);
+figure;
+imshow(warpI2);
+
+%% display flow
 clear flow;
 flow(:,:,1)=vx;
 flow(:,:,2)=vy;
-figure;imshow(flowToColor(flow));
-
-return;
+figure;
+imshow(flowToColor(flow));
 
 % this is the code doing the brute force matching
 % tic;[flow2,energylist2]=mexDiscreteFlow(Sift1,Sift2,[alpha,alpha*20,60,30]);toc
 % figure;imshow(flowToColor(flow2));
+
+end
