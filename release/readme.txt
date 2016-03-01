@@ -1,13 +1,11 @@
-This is the software package of our ECCV paper:
+This is the software package of our TPAMI paper:
 
-C. Liu, J. Yuen, A. Torralba, J. Sivic and W. T. Freeman. SIFT flow: dense correspondence across different scenes. ECCV 2008.
+C. Liu, J. Yuen and A. Torralba. SIFT Flow: Dense Correspondence across Scenes and its Applications. IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI), 2010.
 
-Please cite our paper if you use our code for your research paper.
+Please cite our paper if you use our code for your research. Also, please notice that there is slight change in the package compared to the ECCV version. Obtaining dense SIFT features has been mexed.
 
 
-There is a big change compared to the original paper. We have a coarse-to-fine implementation of SIFT flow matching which runs much faster than the original algorithm presented in the paper.
-
-Please go to "mex" subfolder and follow readme.txt to compile the cpp files. After the compilation is done, copy the dll to the current folder (unless you add the mex folder into MATLAB path). A precompiled dll mexDiscreteFlow.mexw64 for Winndows Vista x64 is included. But in general, compilation is needed.
+Please run demo.h first. If error appears, please go to "mexDenseSIFT" and "mexDiscreteFlow" subfolders and follow the instructions in readme.txt (yes, there is readme.txt in each folder) to compile the cpp files. 
 
 ------------------------- Important -------------------------
 
@@ -21,6 +19,6 @@ Enjoy!
 
 
 Ce Liu
-celiu@mit.edu
-CSAIL MIT
-Jan 2009
+
+Microsoft Research New England
+Sep 2010

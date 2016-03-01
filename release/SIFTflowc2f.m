@@ -1,34 +1,5 @@
-% function for coarse to fine SIFT flow matching
-% 
-% Usage:
-%
-% [vx,vy,energylist]=SIFTflowc2f(im1,im2,SIFTflowpara,isdisplay);
-%
-% Input arguments:
-%     im1 an im2: SIFT images to match (from im1 to im2). The two images are not required
-%                 to have the same dimension, but it is not likely to have meaningful 
-%                 matches if the two images are too different in size
-%
-%     SIFTflowpara: a structure parameter for SIFT flow matching. Here are the fields
-%           alpha:   (0.01) the coefficient of the truncated L1-norm regularization of the flow discontinuity
-%           d:       (alpha*20) the threshold of the truncated L1-norm
-%           gamma:   (0.001) the coefficient of the regularization on flow magnitude (L1 norm)
-%           nlevels: (4) the number of levels of the Gaussian pyramid
-%           topwsize: (10) the size of the matching window at the top level
-%           nTopIterations: (100) the number of BP iterations at the top level
-%           wsize:   (3) the size of the matching window at lower levels
-%           nIterations: (40) the number of BP iterations at lower levels
-%
-%     isdisplay: (false) a boolean variable indicating whether information should be displayed
-%
-% Ce Liu
-% celiu@mit.edu
-% CSAIL MIT
-% Jan, 2009
-%              
-% All Rights Reserved
-
-function [vx,vy,energylist]=SIFTflowc2f(im1,im2,SIFTflowpara,isdisplay)
+% function to do coarse to fine SIFT flow matching
+function [vx,vy,energylist]=SIFTflowc2f(im1,im2,SIFTflowpara,isdisplay,Segmentation)
 
 if isfield(SIFTflowpara,'alpha')
     alpha=SIFTflowpara.alpha;
@@ -36,22 +7,10 @@ else
     alpha=0.01;
 end
 
-if isfield(SIFTflowpara,'alpha_mat')
-    alpha_mat = SIFTflowpara.alpha_mat;
-else
-    alpha_mat = alpha*ones(size(im1));
-end
-
 if isfield(SIFTflowpara,'d')
     d=SIFTflowpara.d;
 else
     d=alpha*20;
-end
-
-if isfield(SIFTflowpara, 'd_mat')
-    d_mat = SIFTflowpara.d_mat;
-else
-    d_mat = alpha_mat*20;
 end
 
 if isfield(SIFTflowpara,'gamma')
@@ -93,20 +52,28 @@ end
 if exist('isdisplay','var')~=1
     isdisplay=false;
 end
-if ~isfloat(im1)
-    im1=im2double(im1);
-end
-if ~isfloat(im2)
-    im2=im2double(im2);
+
+if exist('Segmentation','var')==1
+    IsSegmentation=true;
+else
+    IsSegmentation=false;
 end
 
-% build the Gaussian pyramid for the SIFT images
+% build the pyramid
 pyrd(1).im1=im1;
 pyrd(1).im2=im2;
+if IsSegmentation
+    pyrd(1).seg=Segmentation;
+end
 
 for i=2:nlevels
     pyrd(i).im1=imresize(imfilter(pyrd(i-1).im1,fspecial('gaussian',5,0.67),'same','replicate'),0.5,'bicubic');
     pyrd(i).im2=imresize(imfilter(pyrd(i-1).im2,fspecial('gaussian',5,0.67),'same','replicate'),0.5,'bicubic');
+%     pyrd(i).im1 = reduceImage(pyrd(i-1).im1);
+%     pyrd(i).im2 = reduceImage(pyrd(i-1).im2);
+    if IsSegmentation
+        pyrd(i).seg=imresize(pyrd(i-1).seg,0.5,'nearest');
+    end
 end
 
 for i=1:nlevels
@@ -117,7 +84,7 @@ for i=1:nlevels
     pyrd(i).yy=round((yy-1)*(height2-1)/(height-1)+1-yy);
 end
 
-nIterationArray=round(linspace(nIterations,nIterations*0.6,nlevels));
+nIterationArray=round(linspace(nIterations,nIterations,nlevels));
 
 for i=nlevels:-1:1
     if isdisplay
@@ -126,19 +93,26 @@ for i=nlevels:-1:1
     [height,width,nchannels]=size(pyrd(i).im1);
     [height2,width2,nchannels]=size(pyrd(i).im2);
     [xx,yy]=meshgrid(1:width,1:height);
-
-    if i==nlevels % top level
+    
+    if i==nlevels
+%         vx=zeros(height,width);
+%         vy=vx;
         vx=pyrd(i).xx;
         vy=pyrd(i).yy;
         
         winSizeX=ones(height,width)*topwsize;
         winSizeY=ones(height,width)*topwsize;
-    else % lower levels
+    else
+%         vx=imresize(vx-pyrd(i+1).xx,[height,width],'bicubic')*2+pyrd(i).xx;
+%         vy=imresize(vy-pyrd(i+1).yy,[height,width],'bicubic')*2+pyrd(i).yy;
+        
+%         winSizeX=decideWinSize(vx,wsize);
+%         winSizeY=decideWinSize(vy,wsize);
         vx=round(pyrd(i).xx+imresize(vx-pyrd(i+1).xx,[height,width],'bicubic')*2);
         vy=round(pyrd(i).yy+imresize(vy-pyrd(i+1).yy,[height,width],'bicubic')*2);
         
-        winSizeX=ones(height,width)*wsize;
-        winSizeY=ones(height,width)*wsize;
+        winSizeX=ones(height,width)*(wsize+i-1);
+        winSizeY=ones(height,width)*(wsize+i-1);
     end
     if nchannels<=3
         Im1=im2feature(pyrd(i).im1);
@@ -147,11 +121,39 @@ for i=nlevels:-1:1
         Im1=pyrd(i).im1;
         Im2=pyrd(i).im2;
     end
-    
+    % compute the image-based coefficient
+    if IsSegmentation
+        imdiff=zeros(height,width,2);
+        imdiff(:,1:end-1,1)=double(pyrd(i).seg(:,1:end-1)==pyrd(i).seg(:,2:end));
+        imdiff(1:end-1,:,2)=double(pyrd(i).seg(1:end-1,:)==pyrd(i).seg(2:end,:));
+        Im_s=imdiff*alpha+(1-imdiff)*alpha*0.01;
+        Im_d=imdiff*alpha*100+(1-imdiff)*alpha*0.01*20;
+    end
     if i==nlevels
-        [flow,foo]=mexDiscreteFlow(Im1,Im2,[0,0,gamma*2^(i-1),nTopIterations,2,topwsize],vx,vy,winSizeX,winSizeY,alpha_mat, d_mat);
+        if IsSegmentation
+            [flow,foo]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nTopIterations,2,topwsize],vx,vy,winSizeX,winSizeY,Im_s,Im_d);
+        else
+            [flow,foo]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nTopIterations,2,topwsize],vx,vy,winSizeX,winSizeY);
+            %[flow,foo]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nTopIterations,0,topwsize],vx,vy,winSizeX,winSizeY);
+        end
+%         [flow1,foo1]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nIterationArray(i),0,topwsize],vx,vy,winSizeX,winSizeY);
+%         [flow2,foo2]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nTopIterations,2,topwsize],vx,vy,winSizeX,winSizeY);
+%         if foo1(end)<foo2(end)
+%             flow=flow1;
+%             foo=foo1;
+%         else
+%             flow=flow2;
+%             foo=foo2;
+%         end
     else
-        [flow,foo]=mexDiscreteFlow(Im1,Im2,[0,0,gamma*2^(i-1),nIterationArray(i),nlevels-i,wsize],vx,vy,winSizeX,winSizeY, alpha_mat, d_mat);
+        %[flow,foo]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nIterations,nlevels-i,wsize],vx,vy,winSizeX,winSizeY);
+        if IsSegmentation
+            [flow,foo]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nIterationArray(i),nlevels-i,wsize],vx,vy,winSizeX,winSizeY,Im_s,Im_d);
+        else
+            [flow,foo]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nIterationArray(i),nlevels-i,wsize],vx,vy,winSizeX,winSizeY);
+            %[flow,foo]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nIterationArray(i),0,wsize],vx,vy,winSizeX,winSizeY);
+        end
+%         [flow,foo]=mexDiscreteFlow(Im1,Im2,[alpha,d,gamma*2^(i-1),nIterationArray(i),0,wsize],vx,vy,winSizeX,winSizeY);
     end
     energylist(i).data=foo;
     vx=flow(:,:,1);
@@ -161,6 +163,18 @@ for i=nlevels:-1:1
     end
 end
 
+function winSizeIm=decideWinSize(offset,wsize)
+
+% design the DOG filter
+f1=fspecial('gaussian',9,1);
+f2=fspecial('gaussian',9,.5);
+f=f2-f1;
+
+foo=imfilter(abs(imfilter(offset,f,'same','replicate')),fspecial('gaussian',9,1.5),'same','replicate');
+
+Min=min(foo(:));
+Max=max(foo(:));
+winSizeIm=wsize*(foo-Min)/(Max-Min)+wsize;
 
 
 
