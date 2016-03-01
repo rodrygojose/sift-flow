@@ -1,4 +1,4 @@
-function run_siftFlow( im1, im2 )
+function [warpI2, flow_color] = run_siftFlow( im1, im2 )
 
 %% data parameters
 
@@ -26,23 +26,23 @@ SIFTflowpara.nIterations= 30;
 %% sift flow
 
 tic;
-[vx,vy,energylist] = SIFTflowc2f(sift1,sift2,SIFTflowpara);
+%[vx,vy,energylist] = SIFTflowc2f(sift1,sift2,SIFTflowpara);
+[vx,vy,~] = SIFTflowc2f(sift1,sift2,SIFTflowpara);
 toc
 
 %% warp
 
 warpI2 = warpImage(im2,vx,vy);
-figure;
-imshow(im1);
-figure;
-imshow(warpI2);
 
 %% display flow
 clear flow;
 flow(:,:,1)=vx;
 flow(:,:,2)=vy;
-figure;
-imshow(flowToColor(flow));
+%figure;
+%imshow(flowToColor(flow));
+flow_color = flowToColor(flow);
+
+%%
 
 % this is the code doing the brute force matching
 % tic;[flow2,energylist2]=mexDiscreteFlow(Sift1,Sift2,[alpha,alpha*20,60,30]);toc

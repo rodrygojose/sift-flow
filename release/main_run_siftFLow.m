@@ -1,30 +1,55 @@
 
-
 %%
 
 addpath('C:\Users\rortizca\workspace\ibr-common\src\utilities\scripts\scripts_plane_estimation\readwrite');
 
+addpath(fullfile(pwd,'mexDenseSIFT'));
+addpath(fullfile(pwd,'mexDiscreteFlow'));
+
+
 %%
 %DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo1-24\big_spixels';
-%DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo1-24\IBR_data_VSFM-CMPMVS';
+DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo1-24\IBR_data_VSFM-CMPMVS';
 
 %DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo2-25\big_spixels';
-DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo2-25\IBR_data_VSFM-CMPMVS';
+%DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo2-25\IBR_data_VSFM-CMPMVS';
+
 
 %DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\yellow_house\big_spixels';
 %DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\beausoleil-9\big_spixels';
 
 IDs         = [0, 24];
 
-for id = IDs(1):IDs(end)
-    create_maskedImgs4siftFlow( DATASET, id);
+%%
+
+for id = IDs(1):IDs(2)-1
+        
+    img1        = imread( sprintf('%s/images/0_nonRec_img/%08d.jpg', DATASET, id ) );
+    img2        = imread( sprintf('%s/images/0_nonRec_img/%08d.jpg', DATASET, id+1 ));
+    
+    [warpI2, flowColor]  = run_siftFlow(img1, img2);
+    
+    figure(1);
+    set(gcf, 'Position', get(0,'Screensize')); % Maximize figure.
+
+    subplot(2,2,1)
+    imshow(img1);
+    title( sprintf('img %u', id) ) 
+    
+    subplot(2,2,2)
+    imshow(img2);
+    title( sprintf('img %u', id+1) ) 
+    
+    subplot(2,2,3)
+    imshow(warpI2);
+    title( sprintf('img %u to %u', id+1, id) ) 
+    
+    subplot(2,2,4)
+    imshow( flowColor );
+    title( 'flow visualization' ) 
+    
+    pause;
+    
 end
-
-
-addpath(fullfile(pwd,'mexDenseSIFT'));
-addpath(fullfile(pwd,'mexDiscreteFlow'));
-
-im1=imread('im1.jpg');
-im2=imread('im2.jpg');
 
 
