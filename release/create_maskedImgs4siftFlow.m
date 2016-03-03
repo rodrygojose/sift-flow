@@ -13,7 +13,7 @@ img         = imread( img_name);
 
 %% Decide target superpixels 
 
-[target_sp, img_mask] = find_target_sp(spimg, sdepth, 1 );
+[~, img_mask] = find_target_sp(spimg, sdepth, 1 );
 
 %% mask out reconstructed spixels
 
