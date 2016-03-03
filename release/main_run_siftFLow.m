@@ -5,16 +5,13 @@ addpath(fullfile(pwd,'mexDenseSIFT'));
 addpath(fullfile(pwd,'mexDiscreteFlow'));
 
 %%
-%DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo1-24\big_spixels';
+
 DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo1-24\IBR_data_VSFM-CMPMVS';
-
-%DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo2-25\big_spixels';
 %DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\hugo2-25\IBR_data_VSFM-CMPMVS';
+%DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\yellow_house\IBR_data_VSFM-CMPMVS';
+%DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\beausoleil-9\IBR_data_VSFM-CMPMVS';
 
-%DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\yellow_house\big_spixels';
-%DATASET = 'D:\D_workspace\datasets\0_debuging\0_2labels\beausoleil-9\big_spixels';
-
-IDs     = [0, 24];
+IDs     = [0, 11];
 
 %%
 
@@ -23,7 +20,7 @@ for id = IDs(1):IDs(2)-1
     img1        = imread( sprintf('%s/images/0_nonRec_img/%08d.jpg', DATASET, id ) );
     img2        = imread( sprintf('%s/images/0_nonRec_img/%08d.jpg', DATASET, id+1 ));
     
-    [warpI2, flowColor]  = run_siftFlow(img1, img2);
+    [warpI2, ~]  = run_siftFlow(img1, img2);
     
     figure(1);
     set(gcf, 'Position', get(0,'Screensize')); % Maximize figure.
@@ -41,7 +38,7 @@ for id = IDs(1):IDs(2)-1
     title( sprintf('img %u to %u', id+1, id) ) 
     
     subplot(2,2,4)
-    imshow( flowColor );
+    imshow( imfuse(img1, imresize(warpI2,2)) );
     title( 'flow visualization' ) 
     
     pause;
